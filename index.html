@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nihongo | Minimal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&family=Noto+Sans+Thai:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">Nihongo.</div>
+        <div class="nav-links">
+            <a href="#" class="active" data-target="flashcard-view">Flashcards</a>
+            <a href="#" data-target="kanji-view">Kanji</a>
+            <a href="#" data-target="vocab-view">Vocabulary</a>
+        </div>
+        <div class="stats" id="nav-stats">
+            Learned: <span class="stat-learned" style="color: #2c2c2c; font-weight: 500;">0</span> / <span class="stat-total">0</span>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Flashcard View -->
+        <section id="flashcard-view" class="view active">
+            <div class="controls">
+                <select id="deck-select" class="minimal-select"></select>
+                <span id="card-counter" class="counter-text">1 / 100</span>
+            </div>
+            
+            <div class="flashcard-container" id="flashcard-container">
+                <div class="flashcard" id="flashcard">
+                    <div class="card-face front" id="card-front">
+                        <div class="word" id="front-word"></div>
+                        <div class="hint"><i data-feather="mouse-pointer" style="width: 14px; height: 14px; margin-right: 4px;"></i> Click to flip</div>
+                    </div>
+                    <div class="card-face back" id="card-back">
+                        <div class="word-ruby" id="back-ruby"></div>
+                        <div class="meaning" id="back-meaning"></div>
+                        <div class="kanji-breakdown" id="back-kanji"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-fail" onclick="markCard('fail')">Forgot</button>
+                <button class="btn btn-hard" onclick="markCard('hard')">Almost</button>
+                <button class="btn btn-easy" onclick="markCard('easy')">Remembered</button>
+            </div>
+        </section>
+        
+        <!-- Kanji Breakdown View -->
+        <section id="kanji-view" class="view">
+            <div class="controls">
+                <div style="flex-grow: 1;">
+                    <h2 class="view-title">Kanji Breakdown</h2>
+                    <p class="view-subtitle">Explore root components and readings.</p>
+                </div>
+                <input type="text" id="kanji-search" class="minimal-input" placeholder="Search kanji...">
+            </div>
+            <div class="grid" id="kanji-grid"></div>
+        </section>
+
+        <!-- Vocabulary List View -->
+        <section id="vocab-view" class="view">
+            <div class="controls">
+                <div style="flex-grow: 1;">
+                    <h2 class="view-title">Vocabulary List</h2>
+                    <p class="view-subtitle">Review all words and your progress.</p>
+                </div>
+                <div class="flex-row">
+                    <input type="text" id="vocab-search" class="minimal-input" placeholder="Search vocabulary...">
+                    <select id="vocab-filter" class="minimal-select">
+                        <option value="all">All Status</option>
+                        <option value="easy">Remembered</option>
+                        <option value="hard">Almost</option>
+                        <option value="fail">Forgot</option>
+                        <option value="none">Not learned</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid list-grid" id="vocab-grid"></div>
+        </section>
+    </main>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>
