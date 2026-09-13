@@ -1,21 +1,12 @@
 // Application State
 let state = {
     mode: 'flashcard-view',
-    deckIndex: 0,
+    mainChapterIdx: 0,
+    subChapterIdx: 0,
     cardIndex: 0,
+    currentDeck: [],
     memory: JSON.parse(localStorage.getItem('nihongo_minimal_memory')) || {}
 };
-
-// Derived Data Processing
-const CHUNK_SIZE = 100;
-const decks = [{ id: 0, name: 'All Vocabulary', data: vocabData }];
-for (let i = 0; i < vocabData.length; i += CHUNK_SIZE) {
-    decks.push({
-        id: Math.floor(i / CHUNK_SIZE) + 1,
-        name: `Deck ${Math.floor(i / CHUNK_SIZE) + 1} (${i + 1}-${Math.min(i + CHUNK_SIZE, vocabData.length)})`,
-        data: vocabData.slice(i, i + CHUNK_SIZE)
-    });
-}
 
 // Map for quick kanji lookup
 const kanjiMap = {};
@@ -25,7 +16,10 @@ kanjiData.forEach(k => { kanjiMap[k.kanji] = k; });
 const els = {
     navLinks: document.querySelectorAll('.nav-links a'),
     views: document.querySelectorAll('.view'),
-    deckSelect: document.getElementById('deck-select'),
+    mainSelect: document.getElementById('main-chapter-select'),
+    subSelect: document.getElementById('sub-chapter-select'),
+    currentDeckName: document.getElementById('current-deck-name'),
+    vocabListSubtitle: document.getElementById('vocab-list-subtitle'),
     cardCounter: document.getElementById('card-counter'),
     flashcard: document.getElementById('flashcard'),
     fWord: document.getElementById('front-word'),
@@ -43,7 +37,7 @@ const els = {
 
 // Initialization
 function init() {
-    // 1. Setup Navigation
+    // Setup Navigation
     els.navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -51,29 +45,58 @@ function init() {
         });
     });
 
-    // 2. Setup Deck Selection
-    els.deckSelect.innerHTML = decks.map((d, i) => `<option value="${i}">${d.name}</option>`).join('');
-    els.deckSelect.addEventListener('change', (e) => {
-        state.deckIndex = parseInt(e.target.value);
-        state.cardIndex = 0;
-        loadCard();
+    // Setup Main Chapter Select
+    els.mainSelect.innerHTML = chaptersData.map((ch, i) => `<option value="${i}">${ch.title}</option>`).join('');
+    els.mainSelect.addEventListener('change', (e) => {
+        state.mainChapterIdx = parseInt(e.target.value);
+        state.subChapterIdx = 0; // reset to first sub-chapter
+        populateSubChapters();
+        updateCurrentDeck();
     });
 
-    // 3. Setup Flashcard Flip
+    // Setup Sub Chapter Select
+    els.subSelect.addEventListener('change', (e) => {
+        state.subChapterIdx = parseInt(e.target.value);
+        updateCurrentDeck();
+    });
+
+    // Flashcard flip
     els.flashcard.addEventListener('click', () => {
         els.flashcard.classList.toggle('flipped');
     });
 
-    // 4. Setup Input Listeners
+    // Input Listeners
     els.kanjiSearch.addEventListener('input', renderKanji);
     els.vocabSearch.addEventListener('input', renderVocab);
     els.vocabFilter.addEventListener('change', renderVocab);
 
-    // Initial Renders
-    updateStats();
-    loadCard();
+    // Initial Load
+    populateSubChapters();
+    updateCurrentDeck();
     renderKanji();
-    renderVocab();
+    updateStats();
+}
+
+function populateSubChapters() {
+    const mainCh = chaptersData[state.mainChapterIdx];
+    els.subSelect.innerHTML = mainCh.subs.map((sub, i) => `<option value="${i}">${sub.title}</option>`).join('');
+    els.subSelect.value = state.subChapterIdx;
+}
+
+function updateCurrentDeck() {
+    const mainCh = chaptersData[state.mainChapterIdx];
+    const subCh = mainCh.subs[state.subChapterIdx];
+    
+    // Slice data from main vocab list
+    state.currentDeck = vocabData.slice(subCh.start, subCh.end);
+    state.cardIndex = 0;
+    
+    // Update titles
+    els.currentDeckName.textContent = subCh.title;
+    els.vocabListSubtitle.textContent = `แสดง ${subCh.title}`;
+    
+    loadCard();
+    renderVocab(); // update vocab list view to show only current deck
 }
 
 // Logic: Switch Tabs
@@ -91,17 +114,19 @@ function getRubyHtml(word, furigana) {
 
 // Logic: Load Flashcard
 function loadCard() {
-    const deck = decks[state.deckIndex].data;
-    if (!deck || deck.length === 0) return;
+    if (state.currentDeck.length === 0) {
+        els.fWord.textContent = "ไม่มีคำศัพท์";
+        return;
+    }
 
-    const card = deck[state.cardIndex];
+    const card = state.currentDeck[state.cardIndex];
     
     // Reset flip state silently
     els.flashcard.classList.remove('flipped');
     
     // Wait for flip animation to finish before swapping text
     setTimeout(() => {
-        els.cardCounter.textContent = `${state.cardIndex + 1} / ${deck.length}`;
+        els.cardCounter.textContent = `${state.cardIndex + 1} / ${state.currentDeck.length}`;
         els.fWord.textContent = card.word;
         els.bRuby.innerHTML = getRubyHtml(card.word, card.furigana);
         els.bMeaning.innerHTML = card.meaning.replace(/\n/g, '<br>');
@@ -131,8 +156,9 @@ function loadCard() {
 
 // Logic: Record Progress
 window.markCard = function(status) {
-    const deck = decks[state.deckIndex].data;
-    const card = deck[state.cardIndex];
+    if (state.currentDeck.length === 0) return;
+
+    const card = state.currentDeck[state.cardIndex];
     
     // Save to memory
     state.memory[card.id] = status;
@@ -143,7 +169,7 @@ window.markCard = function(status) {
     if (state.mode === 'vocab-view') renderVocab();
 
     // Proceed to next card
-    state.cardIndex = (state.cardIndex + 1) % deck.length;
+    state.cardIndex = (state.cardIndex + 1) % state.currentDeck.length;
     loadCard();
 };
 
@@ -174,12 +200,13 @@ function renderKanji() {
     `).join('');
 }
 
-// Logic: Render Vocab Grid
+// Logic: Render Vocab Grid (Only for Current Deck)
 function renderVocab() {
     const term = els.vocabSearch.value.toLowerCase();
     const filter = els.vocabFilter.value;
     
-    const filtered = vocabData.filter(v => {
+    // Filter from currentDeck instead of all vocabData
+    const filtered = state.currentDeck.filter(v => {
         const status = state.memory[v.id] || 'none';
         const matchTerm = v.word.toLowerCase().includes(term) || 
                           v.furigana.toLowerCase().includes(term) || 
