@@ -23,12 +23,26 @@
         </div>
     </nav>
 
-    <main class="container">
+    <!-- Chapter Selection Bar -->
+    <div class="chapter-bar">
+        <div class="container chapter-container">
+            <div class="chapter-label"><i data-feather="book-open" style="width:16px; height:16px;"></i> เลือกบทเรียน:</div>
+            <select id="main-chapter-select" class="minimal-select"></select>
+            <select id="sub-chapter-select" class="minimal-select"></select>
+        </div>
+    </div>
+
+    <main class="container main-content">
         <!-- Flashcard View -->
         <section id="flashcard-view" class="view active">
-            <div class="controls">
-                <select id="deck-select" class="minimal-select"></select>
-                <span id="card-counter" class="counter-text">1 / 100</span>
+            <div class="controls flashcard-controls">
+                <div class="deck-info">
+                    <h2 class="view-title" id="current-deck-name">บทเรียนปัจจุบัน</h2>
+                    <p class="view-subtitle">สลับการ์ดเพื่อดูความหมายและรากคันจิ</p>
+                </div>
+                <div class="counter-box">
+                    <span id="card-counter" class="counter-text">1 / 100</span>
+                </div>
             </div>
             
             <div class="flashcard-container" id="flashcard-container">
@@ -54,10 +68,10 @@
         
         <!-- Kanji Breakdown View -->
         <section id="kanji-view" class="view">
-            <div class="controls">
+            <div class="controls flex-col-mobile">
                 <div style="flex-grow: 1;">
                     <h2 class="view-title">Kanji Breakdown</h2>
-                    <p class="view-subtitle">Explore root components and readings.</p>
+                    <p class="view-subtitle">วิเคราะห์ส่วนประกอบของคันจิทั้งหมด</p>
                 </div>
                 <input type="text" id="kanji-search" class="minimal-input" placeholder="Search kanji...">
             </div>
@@ -66,10 +80,10 @@
 
         <!-- Vocabulary List View -->
         <section id="vocab-view" class="view">
-            <div class="controls">
+            <div class="controls flex-col-mobile">
                 <div style="flex-grow: 1;">
                     <h2 class="view-title">Vocabulary List</h2>
-                    <p class="view-subtitle">Review all words and your progress.</p>
+                    <p class="view-subtitle" id="vocab-list-subtitle">คำศัพท์ในบทเรียนนี้</p>
                 </div>
                 <div class="flex-row">
                     <input type="text" id="vocab-search" class="minimal-input" placeholder="Search vocabulary...">
